@@ -4,20 +4,20 @@ const { Node } = require("../extensions/list-tree.js")
 
 class BinarySearchTree {
   constructor(){
-    this.root = null
+    this.treeRoot = null
   }
 
   root() {
-    return this.root
+    return this.treeRoot
   }
 
   add(val) {
-    if(this.root == null){
-      this.root = new Node(val)
+    if(this.treeRoot == null){
+      this.treeRoot = new Node(val)
       return
     }
 
-    let current = this.root
+    let current = this.treeRoot
     while(true){
       if(current.data > val){
 
@@ -44,10 +44,10 @@ class BinarySearchTree {
   }
 
   has(val) {
-    if(this.root == null){
+    if(this.treeRoot == null){
       return false
     }
-    let current = this.root
+    let current = this.treeRoot
 
     while(true){
       if(current.data > val){
@@ -62,7 +62,6 @@ class BinarySearchTree {
       else if (current.data < val){
         if(current.right != null){
           current = current.right
-          console.log("two",current.right)
         } else {
           return false
         }
@@ -75,10 +74,10 @@ class BinarySearchTree {
   }
 
   find(val) {
-    if(this.root == null){
+    if(this.treeRoot == null){
       return null
     }
-    let current = this.root
+    let current = this.treeRoot
 
     while(true){
       if(current.data > val){
@@ -97,7 +96,6 @@ class BinarySearchTree {
         } else {
           return null
         }
-
       }
       else{
         return current
@@ -105,67 +103,147 @@ class BinarySearchTree {
     }
   }
 
-  remove(val) {
-    if(this.root == null){
+  findWithParent(val) {
+    if(this.treeRoot == null){
       return null
     }
 
-    let current = this.root
-    let parentNode = null
-    let move;
-    while(current){
-      if(current.data > val) {
-        move = "left"
-        parentNode = current
-        current = current.left
-      } else if (current.data < val){
-        move = "right"
-        parentNode = current
-        current = current.right
-      } else {
-        if(current.left == null && current.right == null) {
-          if(!parentNode){
-            this.root = null
-          } else if(current == parentNode.left) {
-            parentNode.left = null
-          } else {
-            parentNode.right = null
-          }
-          return this.root
-        } else if (current.left === null && current.right !== null) {
-          parentNode.right = current.right
-          return this.root
-        } else if (current.left !== null && current.right === null){
-          parentNode.left = current.left
-          return this.root
-        } else if(current.left !== null && current.right !== null){
-          let leftSubtree = current.left;
-          let rightSubtree = current.right
-          let maxLeft = leftSubtree.maxWithParent()
-          parentNode.move = maxLeft[0]
-          maxLeft[0].left = leftSubtree
-          maxLeft[0].right = rightSubtree
-          leftSubtree.right = maxLeft[1]
-          return this.root
+    let current = this.treeRoot
+    let parent = this.treeRoot
+    let direction = null
+
+    while(true){
+      if(current.data > val){
+
+        if(current.left != null){
+          parent = current
+          current = current.left
+          direction = "left"
+        }else {
+          return null
         }
+
+      }
+      else if (current.data < val){
+        if(current.right != null){
+          parent = current
+          current = current.right
+          direction = "right"
+          // console.log("two", current.right)
+        } else {
+          return null
+        }
+      }
+      else{
+        return [parent, current, direction]
       }
     }
   }
 
-  //remove(val){
-    // 1. find element val and it's parent parentOfDeleted and where to go ("right" or "left")
-    // 2. got it's parent (left, or right as side), leftSubTree, rightSubTree
-    // 3. find max of leftSubTree, and his leftMaxParent
-    // 4. parent.side = leftMaxParent; leftMaxParent.left = leftSubTree; leftMaxParent.right =rightSubTree
+  removeHelper(deleteParent, elemToDelete, direction){
+    let [leftMax, leftMaxParent] = this.maxWithParent(elemToDelete.left)
+
+    if(leftMax !== null && leftMaxParent !== null){
+      
+      leftMaxParent.right = leftMax.left
+      
+      if(direction == "right"){
+        deleteParent.right = leftMax
+      }else if (direction == "left"){
+        deleteParent.left = leftMax
+      }
     
-  //}
+      leftMax.left = elemToDelete.left
+      leftMax.right = elemToDelete.right
+    }
+    else if (leftMax === null && leftMaxParent !== null){
+      if(direction == "right"){
+        deleteParent.right = leftMaxParent
+      }else if (direction == "left"){
+        deleteParent.left = leftMaxParent
+      }
+      leftMaxParent.right = elemToDelete.right
+    }
+    else if(leftMax === null && leftMaxParent === null) {
+      if(direction == "right"){
+        deleteParent.right = elemToDelete.right
+      }else if (direction == "left"){
+        deleteParent.left = elemToDelete.right
+      }
+    }
+  }
+
+  // remove(val){
+  //   if(!this.has(val)){
+  //     return
+  //   }
+
+  //   let [deleteParent, elemToDelete, direction] = this.findWithParent(val)
+  //   if(direction === null){
+  //     // want to delete root elem
+      
+  //     if(!elemToDelete.left && elemToDelete.right){
+  //       this.root = elemToDelete.right
+  //       return
+  //     }else if(!elemToDelete.left && !elemToDelete.right){
+  //       this.root = null
+  //       return
+  //     }else if(elemToDelete.left && !elemToDelete.right){
+  //       this.root = elemToDelete.left
+  //       return
+  //     }else {
+  //       this.removeHelper(deleteParent, elemToDelete, direction)
+  //     }
+
+  //   }
+
+  //   this.removeHelper(deleteParent, elemToDelete, direction)
+
+  // }
+
+  remove(value){
+    this.treeRoot = this.removeNode(this.treeRoot, value)
+  }
+
+  removeNode(current, value) {
+    if (current === null) {
+        return current
+    }
+    if (value === current.value) {
+        if (current.left === null && current.right === null) {
+            return null
+        } else if (current.left === null) {
+            return current.right
+        } else if (current.right === null) {
+            return current.left
+        } else {
+            let tempNode = this.minNode(current.right)
+            current.value = tempNode.value
+
+            current.right = this.removeNode(current.right, tempNode.value)
+            return current
+        }
+    } else if (value < current.value) {
+        current.left = this.removeNode(current.left, value)
+        return current
+    } else {
+        current.right = this.removeNode(current.right, value)
+        return current
+    }
+}
+  minNode(node) {
+      while(!node.left === null)
+        node = node.left
+
+      return node
+  }
 
   min() {
-    if(this.root == null){
+    if(this.treeRoot == null){
       return null
     }
 
-    let current = this.root
+    let current = this.treeRoot
     while(current.left){
       current = current.left
     }
@@ -174,11 +252,11 @@ class BinarySearchTree {
   }
 
   max() {
-    if(this.root == null){
+    if(this.treeRoot == null){
       return null
     }
 
-    let current = this.root
+    let current = this.treeRoot
     while(current.right){
       current = current.right
     }
@@ -186,14 +264,14 @@ class BinarySearchTree {
     return current.data
   }
 
-  maxWithParent(){
-    if (this.root === null) {
-      return null;
+  maxWithParent(node){
+    if (node === null) {
+      return [null, null];
     }
-    let parent = this.root;
+    let parent = node;
 
     if (parent.right === null) {
-      return [parent, null];
+      return [null, parent];
     }
 
     let current = parent.right;
@@ -205,17 +283,75 @@ class BinarySearchTree {
     return [current, parent];
   }
 
-  
+
 }
 
-let tree = new BinarySearchTree()
-tree.add(3)
-tree.add(5)
-tree.add(1)
-tree.add(8)
-tree.find(3)
+function depthFirst(node){
+  if(node){
+    console.log(node.data)
+    depthFirst(node.left)
+    depthFirst(node.right)
+  }
+}
 
+const tree = new BinarySearchTree();
+tree.add(9);
+tree.add(14);
+tree.add(2);
+tree.add(6);
+tree.add(128);
+tree.add(8);
+tree.add(31);
+tree.add(54);
+tree.add(1);
+tree.remove(14);
+tree.remove(8);
+tree.remove(9);
+depthFirst(tree.treeRoot)
+console.log(tree.has(14), false);
+console.log(tree.has(8), false);
+console.log(tree.has(9), false);
+console.log(tree.has(2), true);
+console.log(tree.has(6), true);
+console.log(tree.has(128), true);
+console.log(tree.has(31), true);
+console.log(tree.has(54), true);
+console.log(tree.has(1), true);
 
+// let tree = new BinarySearchTree()
+// let afterRemove = new BinarySearchTree()
+
+// let treeElems = [-3, -5, 4, -6, -4, -1, 6, -2, 3, 5, 8, 1, 7, 0, 2]
+// let removedElems = [-3, -5, 3, -6, -4, -1, 6, -2, 5, 8, 1, 7, 0, 2]
+
+// for(let elem of treeElems){
+//   tree.add(elem)
+// }
+// for(let elem of removedElems){
+//   afterRemove.add(elem)
+// }
+
+// tree.add(9);
+// tree.add(14);
+// tree.add(2);
+// tree.add(6);
+// tree.add(128);
+// tree.add(8);
+// tree.add(31);
+// tree.add(54);
+// tree.add(1);
+// tree.remove(14);
+// tree.remove(8);
+// tree.remove(9);
+// console.log(tree.has(14), false);
+// console.log(tree.has(8), false);
+// console.log(tree.has(9), false);
+// console.log(tree.has(2), true);
+// console.log(tree.has(6), true);
+// console.log(tree.has(128), true);
+// console.log(tree.has(31), true);
+// console.log(tree.has(54), true);
+// console.log(tree.has(1), true);
 
 
 module.exports = {
